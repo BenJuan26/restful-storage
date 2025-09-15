@@ -27,21 +27,34 @@ apiRouter.put("/store/:key", async (req, res) => {
 
 apiRouter.get("/store/:key", async (req, res) => {
     const { key } = req.params;
-    let json = "";
 
+    let jsonString = ""
     try {
-        json = await fsPromises.readFile(`/data/${key}.json`);
+        jsonString = await fsPromises.readFile(`/data/${key}.json`);
     } catch (err) {
         if (err.code === "ENOENT") {
-            res.statusCode = 404;
+            res.status(404);
+            res.end();
+            return;
         } else {
             console.log(err);
-            res.statusCode = 500;
+            res.status(500);
+            res.end();
+            return;
         }
     }
 
-    if (json) {
-        res.send(json);
+    if (jsonString) {
+        try {
+            const json = JSON.parse(jsonString);
+            res.send(json);
+            return;
+        } catch (err) {
+            console.log(err);
+            res.status(500);
+            res.end();
+            return;
+        }
     } else {
         res.status(404);
         res.end();
