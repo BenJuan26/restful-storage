@@ -4,13 +4,13 @@ const fsPromises = require('fs/promises');
 const app = express();
 const port = 3000;
 
+const apiRouter = express.Router();
+
 app.use(express.json());
 
-app.put("/:key", async (req, res) => {
+apiRouter.put("/store/:key", async (req, res) => {
     const { key } = req.params;
-    console.log(`received PUT request for key ${key}`);
     const json = JSON.stringify(req.body);
-    console.log(json);
 
     try {
         await fsPromises.writeFile(`/data/${key}.json`, json);
@@ -25,14 +25,12 @@ app.put("/:key", async (req, res) => {
     res.end();
 });
 
-app.get("/:key", async (req, res) => {
+apiRouter.get("/store/:key", async (req, res) => {
     const { key } = req.params;
-    console.log(`received GET request for key ${key}`);
     let json = "";
 
     try {
         json = await fsPromises.readFile(`/data/${key}.json`);
-        console.log(json);
     } catch (err) {
         if (err.code === "ENOENT") {
             res.statusCode = 404;
@@ -49,6 +47,19 @@ app.get("/:key", async (req, res) => {
         res.end();
         return;
     }
+});
+
+app.use("/api", apiRouter);
+
+app.use("/assets", express.static("/www/assets"))
+
+app.get("/", (req, res) => {
+    res.sendFile("/www/index.html");
+});
+
+// catch-all routing for single-page apps
+app.get("*path", (req, res) => {
+    res.sendFile("/www/index.html");
 });
 
 app.listen(port, () => {
